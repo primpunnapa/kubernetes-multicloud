@@ -1,45 +1,3 @@
-### Demo project accompanying a [Consul crash course video](https://www.youtube.com/watch?v=s3I1kKKfjtQ) on YouTube
-
-Terraform commands to execute the script
-
-```sh
-# initialise project & download providers
-terraform init
-
-# preview what will be created with apply & see if any errors
-terraform plan
-
-# exeucute with preview
-terraform apply -var-file terraform.tfvars
-
-# execute without preview
-terraform apply -var-file terraform.tfvars -auto-approve
-
-# destroy everything
-terraform destroy
-
-# show resources and components from current state
-terraform state list
-```
-
-#### Get access to EKS cluster
-```sh
-# install and configure awscli with access creds
-aws configure
-
-# check existing clusters list
-aws eks list-clusters --region eu-central-1 --output table --query 'clusters'
-
-# check config of specific cluster - VPC config shows whether public access enabled on cluster API endpoint
-aws eks describe-cluster --region eu-central-1 --name myapp-eks-cluster --query 'cluster.resourcesVpcConfig'
-
-# create kubeconfig file for cluster in ~/.kube
-aws eks update-kubeconfig --region eu-central-1 --name myapp-eks-cluster
-
-# test configuration
-kubectl get svc
-```
-
 ## Set up EKS cluster with terraform
 
 prerequisite : create account AWS [https://signin.aws.amazon.com/signup?request_type=register]
@@ -48,19 +6,19 @@ prerequisite : create account AWS [https://signin.aws.amazon.com/signup?request_
 1. go to AWS console
 IAM --> USER --> create user
 
-2. step 1 enter username
-   step 2 Permission option: choose attach policies directly
-          select Administrator access
-   step 3 create user
+2. - step 1 enter username
+   - step 2 Permission option: choose attach policies directly --> select Administrator access
+   - step 3 create user
    ![create-user](screenshots/create-user.png)
 
 3. Once create user successfully, go to that user
    3.1 choose security credentials tab
-   3.2 create access key : step 1 choose command line interface use case
-                           step 2 option (do nothing)
-                           step 3 retrieve access key
+   3.2 create access key : 
+      - step 1 choose command line interface use case
+      - step 2 option (do nothing)
+      - step 3 retrieve access key and secret key and save it in a safe place because you won't be able to see the secret key again after this step
+
    ![create-key](screenshots/create-key.png)
-   ![access-key](screenshots/access-key.png)
 
 4. copy the access key and secret key and put inside terraform.tfvars
 ```bash
@@ -83,80 +41,159 @@ terraform apply -var-file terraform.tfvars
 aws eks update-kubeconfig --region eu-central-1 --name myapp-eks-cluster
 ```
 
-7. test configuration
-```sh
-kubectl get node
-kubectl get pod
-kubectl get svc
-```
-
-8. Deploy consul
+7. Deploy consul
 ```sh
 helm repo add hashicorp https://helm.releases.hashicorp.com
 helm install eks hashicorp/consul --version 1.0.0 --values consul-values.yaml --set global.datacenter=eks
 ```
 
-9. kubectl get crd | grep consul
+8. Check pod
 ```sh
-kubectl get crd | grep consul
+kubectl get pod
+```
+![eks-pod](screenshots/eks-pod.png)
+
+9. Update kubeconfig file for cluster in ~/.kube
+```sh
+aws eks update-kubeconfig --region eu-central-1 --name myapp-eks-cluster
 ```
 
-
-optional : clean up everything
+10. Deploy microservice
 ```sh
-terraform destroy -var-file terraform.tfvars
-```
-clean up kubeconfig file
-```sh
-rm -rf ~/.kube/config
-```
-clean terraform state
-```sh
-rm -rf .terraform
-rm -rf terraform.tfstate
-rm -rf terraform.tfstate.backup
+kubectl apply -f config-consul.yaml
 ```
 
+11. Check service
+```sh
+kubectl get svc
+```
+![eks-svc](screenshots/eks-svc.png)
 
-## Access the lke cluster
+12. Go to Consul UI by using EXTERNAL-IP of consul-ui service
+```sh
+https://EXTERNAL-IP
+```
+![eks-consul](screenshots/eks-consul.png)
+
+13. Access the web frontend in a browser using the frontend's external IP.
+```sh
+EXTERNAL-IP:80
+```
+![eks-web](screenshots/eks-web.png)
+
+14. Configure access rules in Consul UI about paymentservice
+Go to intentions tab in Consul UI, create 3 intentions with 
+   - 1 source = checkoutservice, destination = paymentservice, action = allow
+   - 2 source = *, destination = paymentservice, action = deny
+   - 3 source = paymentservice, destination = *, action = deny
+
+![eks-intention](screenshots/eks-intention.png)
+
+## Set up LKE cluster
+Prerequisite: create account in Linode [https://www.linode.com/]
+
 1. create the cluster in Linode called 'lke' and download lke-consul-kubeconfig.yaml (my lke-consul-kubeconfig.yaml in kubenetes folder)
-```
+```bash
 cd kubernetes
 export KUBECONFIG=~/Downloads/lke-consul-kubeconfig.yaml # or your path file
 ```
+![lke-akamia](screenshots/lke-akamai.png)
 
 2. Check node
-```
+```bash
 kubectl get node
 ```
 
-3.
-```
+3. Set permissions
+```bash
 chmod 700 ~/Downloads/lke-consul-kubeconfig.yaml
 ```
+
 4. Deploy consul
-```
+```bash
 helm repo add hashicorp https://helm.releases.hashicorp.com
 helm install lke hashicorp/consul --version 1.0.0 --values consul-values.yaml --set global.datacenter=lke
 ```
+
 5. Check crd
-```
+```bash
 kubectl get crd | grep consul
 ```
-![lks-consul](screenshots/lke-consul.png)
-![lke-akamia](screenshots/lke-akamia.png)
 
 6. Deploy microservice
-```kubectl apply -f config-consul.yaml
+```bash
+kubectl apply -f config-consul.yaml
 ```
-![lke-web](screenshots/lke-web.png)
 
 7. Check service
-```kubectl get svc
+```bash
+kubectl get svc
 ```
 ![lke-svc](screenshots/lke-svc.png)
 
-## Set up EKS cluster with terraform
+8. Go to Consul UI by using EXTERNAL-IP of consul-ui service
+```sh
+https://EXTERNAL-IP
+```
+![lks-consul](screenshots/lke-consul.png)
+
+9. Access the web frontend in a browser using the frontend's external IP.
+```sh
+EXTERNAL-IP:80
+```
+![lke-web](screenshots/lke-web.png)
+
+
+## Connecting to EKS cluster and LKE cluster
+1. In lke terminal, 
+```bash
+kubectl config current-context # make sure you are in lke cluster
+kubectl apply -f consul-mesh-gateway.yaml
+kubectl get mesh # check if mesh gateway is created
+```
+
+2. In eks terminal, 
+```bash
+kubectl config current-context # make sure you are in eks cluster
+kubectl apply -f consul-mesh-gateway.yaml
+kubectl get mesh # check if mesh gateway is created
+```
+
+3. Go to eks consul UI and choose peer tab, 
+   1. add peer connection with lke cluster : generate token tab (name of peer = lke) and generate token
+   2. copy token and close
+   3. go to lke consul UI, choose peer tab, add peer connection with eks cluster : establish connection tab, paste the token and establish connection
+
+#### LKE peer connection with EKS cluster
+![lke-peer](screenshots/lke-peer.png)
+#### EKS peer connection with LKE cluster
+![eks-peer](screenshots/eks-peer.png)
+
+## Configure failover with service resolver
+1. Export service in lke cluster
+```bash
+# in lke terminal
+kubectl apply -f exported-service.yaml
+```
+2. Go to lke consul UI, check peer tap, click exported service. make sure you see shippingservice
+![lke-export](screenshots/lke-export.png)
+
+3. Go to eks consul UI, check service tab, see shippingservice
+![lke-eks](screenshots/lke-eks.png)
+
+4. Apply service resolver in eks cluster
+```bash
+# in eks terminal
+kubectl apply -f service-resolver.yaml
+```
+5. Try to delete shippingservice in eks cluster
+```bash
+kubectl delete deployment shippingservice
+```
+6. Go to web frontend, try to add some items to the cart, see if shippingservice is still working or not.
+![failover](screenshots/failover.png)
+
+## Set up GKE cluster
 1. Ensure you have the following requirements:
    - [Google Cloud project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project).
    - Shell environment with `gcloud`, `git`, and `kubectl`.
@@ -234,21 +271,87 @@ kubectl get crd | grep consul
 
 ## How to deploy Online Boutique with Helm
 1. go to kubernetes-manifests
-```
+```bash
 cd kubernetes-manifests
 helm repo add hashicorp https://helm.releases.hashicorp.com
 helm install gke hashicorp/consul --values consul-values.yaml # if you already have consul installed, use `helm upgrade gke hashicorp/consul --values consul-values.yaml`
 ```
+
 ### What I change from the original code
-1. node group instance type to t3.medium (main.tf)
+1. node group instance type to t3.small (main.tf)
 Reason: Due to free tier limit, I can't use instance type t2.small. Then, I initially used t3.micro instance type for the node group. 
 However, this instance type does not provide sufficient resources to run all the necessary components of the EKS cluster, including the AWS EBS CSI driver and service mesh components. 
 As a result, the Kubernetes scheduler was unable to place critical system pods, leading to provisioning failures. Upgrading the node instances to t3.medium provided more CPU and memory resources, allowing the scheduler to successfully place all required pods and enabling successful provisioning of storage and service mesh components.
 
-2. Change kubernetes version to 1.30 (variables.tf)
+2. change desire size to 2 (main.tf)
+Reason: The original code has a desired size of 3. But I got the error " Warning  FailedScheduling  4m11s  default-scheduler  0/3 nodes are available: 3 Too many pods. preemption: 0/3 nodes are available: 3 No preemption victims found for incoming pod."
+
+3. Change kubernetes version to 1.30 (variables.tf)
 variable k8s_version {
     default = "1.30"
 }
+
+4. I need to remove some service because of node capacity limits. I remove recommendationservice, adservice and emailservice to make rediscart service run, I use the following command:
+```sh
+kubectl scale deployment adservice --replicas=0
+kubectl scale deployment recommendationservice --replicas=0
+kubectl scale deployment emailservice --replicas=0
+```
+### Demo project accompanying a [Consul crash course video](https://www.youtube.com/watch?v=s3I1kKKfjtQ) on YouTube
+
+Terraform commands to execute the script
+
+```sh
+# initialise project & download providers
+terraform init
+
+# preview what will be created with apply & see if any errors
+terraform plan
+
+# exeucute with preview
+terraform apply -var-file terraform.tfvars
+
+# execute without preview
+terraform apply -var-file terraform.tfvars -auto-approve
+
+# destroy everything
+terraform destroy
+
+# show resources and components from current state
+terraform state list
+```
+
+#### Get access to EKS cluster
+```sh
+# install and configure awscli with access creds
+aws configure
+
+# check existing clusters list
+aws eks list-clusters --region eu-central-1 --output table --query 'clusters'
+
+# check config of specific cluster - VPC config shows whether public access enabled on cluster API endpoint
+aws eks describe-cluster --region eu-central-1 --name myapp-eks-cluster --query 'cluster.resourcesVpcConfig'
+
+# create kubeconfig file for cluster in ~/.kube
+aws eks update-kubeconfig --region eu-central-1 --name myapp-eks-cluster
+
+# test configuration
+kubectl get svc
+```
+### Optional : clean up everything
+```sh
+terraform destroy -var-file terraform.tfvars
+```
+clean up kubeconfig file
+```sh
+rm -rf ~/.kube/config
+```
+clean terraform state
+```sh
+rm -rf .terraform
+rm -rf terraform.tfstate
+rm -rf terraform.tfstate.backup
+```
 
 credit:
 - [Consul crash course video](https://www.youtube.com/watch?v=s3I1kKKfjtQ) on YouTube
