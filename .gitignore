@@ -1,0 +1,53 @@
+cat > .gitignore << 'EOF'
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+terraform.tfvars
+*.tfvars
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Provider binaries (these are the large files)
+**/terraform-provider-*
+**/providers/
+**/.terraform/providers/
+
+# Kubernetes
+*.kubeconfig
+kubeconfig
+
+# Large files
+*.zip
+*.gz
+*.tar
+*.bin
+*.exe
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+*.pem
+*.key
+*.crt
+EOF
+
+# Add .gitignore to staging
+git add .gitignore
+
+# Remove any accidentally staged .terraform directories if they exist
+git rm -r --cached .terraform/ 2>/dev/null || true
+git rm -r --cached **/.terraform/ 2>/dev/null || true

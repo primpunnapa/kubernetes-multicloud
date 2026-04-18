@@ -1,0 +1,44 @@
+global:
+  image: "hashicorp/consul:1.22.6"
+  datacenter: "gke"
+  peering:
+    enabled: true
+  tls:
+    enabled: true
+
+server:
+  replicas: 1
+  bootstrapExpect: 1
+  extraConfig: |
+    {
+      "log_level": "TRACE"
+    }
+  affinity: |
+      podAntiAffinity: null
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "200Mi"
+    limits:
+      cpu: "100m"
+      memory: "200Mi"
+
+connectInject:
+  enabled: true
+  apiGateway:
+    manageExternalCRDs: false
+
+meshGateway:
+  enabled: true
+  replicas: 1
+  service:
+    type: LoadBalancer
+
+controller:
+  enabled: true
+
+ui:
+  enabled: true
+  service:
+    enabled: true
+    type: LoadBalancer
