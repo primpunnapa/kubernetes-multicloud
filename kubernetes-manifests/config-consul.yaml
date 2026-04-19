@@ -35,7 +35,6 @@ spec:
   - protocol: TCP
     port: 5000
     targetPort: 8080
-
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -50,7 +49,7 @@ spec:
       labels:
         app: recommendationservice
       annotations:
-        # consul.hashicorp.com/connect-inject: 'true'
+        consul.hashicorp.com/connect-inject: 'true'
         consul.hashicorp.com/connect-service-upstreams: 'productcatalogservice:3550'
     spec:
       containers:
@@ -76,7 +75,6 @@ spec:
   - protocol: TCP
     port: 8080
     targetPort: 8080
-
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -90,8 +88,8 @@ spec:
     metadata:
       labels:
         app: paymentservice
-      # annotations:
-        # consul.hashicorp.com/connect-inject: 'true'
+      annotations:
+        consul.hashicorp.com/connect-inject: 'true'
     spec:
       containers:
       - name: server
@@ -114,7 +112,6 @@ spec:
   - protocol: TCP
     port: 50051
     targetPort: 50051
-
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -128,8 +125,8 @@ spec:
     metadata:
       labels:
         app: productcatalogservice
-      # annotations:
-        # consul.hashicorp.com/connect-inject: 'true'
+      annotations:
+        consul.hashicorp.com/connect-inject: 'true'
     spec:
       containers:
       - name: server
@@ -152,7 +149,6 @@ spec:
   - protocol: TCP
     port: 3550
     targetPort: 3550
-
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -166,12 +162,12 @@ spec:
     metadata:
       labels:
         app: currencyservice
-      # annotations:
+      annotations:
         consul.hashicorp.com/connect-inject: 'true'
     spec:
       containers:
       - name: server
-        image: gcr.io/google-samples/microservices-demo/currencyservice
+        image: gcr.io/google-samples/microservices-demo/currencyservice:v0.8.0
         ports:
         - containerPort: 7000
         env:
@@ -190,7 +186,6 @@ spec:
   - protocol: TCP
     port: 7000
     targetPort: 7000
-
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -228,7 +223,6 @@ spec:
   - protocol: TCP
     port: 50052
     targetPort: 50052
-
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -266,7 +260,6 @@ spec:
   - protocol: TCP
     port: 9555
     targetPort: 9555
-
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -304,7 +297,6 @@ spec:
   - protocol: TCP
     port: 7070
     targetPort: 7070
-
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -355,7 +347,6 @@ spec:
   - protocol: TCP
     port: 5050
     targetPort: 5050
-
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -447,4 +438,3 @@ spec:
   - name: redis
     port: 6379
     targetPort: 6379
-
