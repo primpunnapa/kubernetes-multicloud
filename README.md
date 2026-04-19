@@ -266,8 +266,7 @@ Verify the CRDs are installed:
 5. Deploy Online Boutique to the cluster.
 
    ```bash
-   kubectl apply -f config-consul.yaml
-   ```
+   kubectl apply -f config-consul.yaml # or kubectl apply -f kubernetes-manifests.yaml
 
 6. Wait for the pods to be ready.
 
@@ -411,9 +410,21 @@ rm -rf .terraform
 rm -rf terraform.tfstate
 rm -rf terraform.tfstate.backup
 ```
+
+Delete microservice in cluster
+```sh
+kubectl delete -f config-consul.yaml
+```
+
 uninstall consul in cluster
 ```sh
 helm uninstall cluster-name --no-hooks
+```
+
+Delete cluster in GKE
+```sh
+gcloud container clusters delete online-boutique \
+  --project=${PROJECT_ID} --region=${REGION}
 ```
 
 ### Credit:
