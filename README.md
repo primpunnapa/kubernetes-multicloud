@@ -1,3 +1,12 @@
+
+# Online Boutique with Multi-Cloud Kubernetes Clusters
+
+## File structure
+- kubernetes : contains yaml files for deploying consul and microservice in both eks and lke cluster
+- terraform : contains terraform code for provisioning eks cluster in AWS
+- screenshots : contains screenshots for each step of the demo
+- kubenetes-manifests : contains yaml files for deploying microservice in gke cluster
+
 ## Set up EKS cluster with terraform
 
 prerequisite : create account AWS [https://signin.aws.amazon.com/signup?request_type=register]
@@ -193,23 +202,22 @@ kubectl delete deployment shippingservice
 6. Go to web frontend, try to add some items to the cart, see if shippingservice is still working or not.
 ![failover](screenshots/failover.png)
 
+
 ## Set up GKE cluster
-1. Ensure you have the following requirements:
+
+### Prerequisites
    - [Google Cloud project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project).
    - Shell environment with `gcloud`, `git`, and `kubectl`.
    - When create project, make sure to enable billing and set up a billing account. You can follow [this guide](https://cloud.google.com/billing/docs/how-to/manage-billing-account) to set up a billing account and link it to your project.
-   - Make sure you enable kubenetes API in your project. You can do this by going to the [Google Cloud Console](https://console.cloud.google.com/apis/library/container.googleapis.com) and enabling the Kubernetes Engine API for your project.
+   - Ensure the Google Kubernetes Engine API is enabled.. You can do this by going to the [Google Cloud Console](https://console.cloud.google.com/apis/library/container.googleapis.com) and enabling the Kubernetes Engine API for your project.
 
-2. Clone the latest major version.
-
+## Deploy Online Boutique on GKE
+1. Go to kubernetes-manifests folder
    ```sh
-   git clone --depth 1 --branch v0 https://github.com/GoogleCloudPlatform/microservices-demo.git
-   cd microservices-demo/
+   cd kubernetes-manifests
    ```
 
-   The `--depth 1` argument skips downloading git history.
-
-3. Set the Google Cloud project and region and ensure the Google Kubernetes Engine API is enabled.
+2. Set the Google Cloud project and region and ensure the Google Kubernetes Engine API is enabled.
 
    ```sh
    export PROJECT_ID=<PROJECT_ID>
@@ -220,7 +228,7 @@ kubectl delete deployment shippingservice
 
    Substitute `<PROJECT_ID>` with the ID of your Google Cloud project.
 
-4. Create a GKE cluster and get the credentials for it.
+3. Create a GKE cluster and get the credentials for it.
 
    ```sh
    gcloud container clusters create-auto online-boutique \
@@ -229,55 +237,59 @@ kubectl delete deployment shippingservice
 
    Creating the cluster may take a few minutes.
 
+4. Install Consul Service Mesh on GKE. Add the HashiCorp Helm repository and install Consul.
+```bash
+helm repo add hashicorp https://helm.releases.hashicorp.com
+helm install gke hashicorp/consul --version "1.0.0" --values consul-values.yaml # if you already have consul installed, use `helm upgrade gke hashicorp/consul --values consul-values.yaml`
+```
+Check the summary of the resources created by the Helm:
+```bash
+kubectl get all
+```
+![gke-resources](screenshots/all-gke.png)
+
+Verify the CRDs are installed:
+```bash
+kubectl get crd | grep consul
+```
+![crd-gke](screenshots/crd-gke.png)
+
 5. Deploy Online Boutique to the cluster.
 
-   ```sh
-   kubectl apply -f ./release/kubernetes-manifests.yaml
-   ```
+```sh
+kubectl apply -f kubernetes-manifests.yaml
+```
 
 6. Wait for the pods to be ready.
 
-   ```sh
-   kubectl get pods
-   ```
-
-   After a few minutes, you should see the Pods in a `Running` state:
-
-   ```
-   NAME                                     READY   STATUS    RESTARTS   AGE
-   adservice-76bdd69666-ckc5j               1/1     Running   0          2m58s
-   cartservice-66d497c6b7-dp5jr             1/1     Running   0          2m59s
-   checkoutservice-666c784bd6-4jd22         1/1     Running   0          3m1s
-   currencyservice-5d5d496984-4jmd7         1/1     Running   0          2m59s
-   emailservice-667457d9d6-75jcq            1/1     Running   0          3m2s
-   frontend-6b8d69b9fb-wjqdg                1/1     Running   0          3m1s
-   loadgenerator-665b5cd444-gwqdq           1/1     Running   0          3m
-   paymentservice-68596d6dd6-bf6bv          1/1     Running   0          3m
-   productcatalogservice-557d474574-888kr   1/1     Running   0          3m
-   recommendationservice-69c56b74d4-7z8r5   1/1     Running   0          3m1s
-   redis-cart-5f59546cdd-5jnqf              1/1     Running   0          2m58s
-   shippingservice-6ccc89f8fd-v686r         1/1     Running   0          2m58s
-   ```
-
-7. Access the web frontend in a browser using the frontend's external IP.
-
-   ```sh
-   kubectl get service frontend-external | awk '{print $4}'
-   ```
-
-   Visit `http://EXTERNAL_IP` in a web browser to access your instance of Online Boutique.
-
-![eks](screenshots/eks.png)
-
-## How to deploy Online Boutique with Helm
-1. go to kubernetes-manifests
-```bash
-cd kubernetes-manifests
-helm repo add hashicorp https://helm.releases.hashicorp.com
-helm install gke hashicorp/consul --values consul-values.yaml # if you already have consul installed, use `helm upgrade gke hashicorp/consul --values consul-values.yaml`
+```sh
+kubectl get pod
 ```
 
-### What I change from the original code
+After a few minutes, you should see the Pods in a `Running` state:
+
+![pod-gke](screenshots/pod-gke.png)
+
+8. Access the web frontend in a browser using the frontend's external IP.
+
+```sh
+kubectl get service frontend-external | awk '{print $4}'
+```
+
+Visit `http://EXTERNAL_IP` in a web browser to access your instance of Online Boutique.
+
+![gke-web](screenshots/gke-web.png)
+
+9. Connect with Consul UI by using EXTERNAL-IP of consul-ui service
+```sh
+kubectl get svc gke-consul-ui | awk '{print $4}'
+```
+Visit `https://EXTERNAL_IP` in a web browser to access Consul UI.
+
+10. Connect with EKS cluster and LKE cluster by following the same steps in EKS cluster and LKE cluster section above.
+
+## What I change from the original code
+### terraform code for EKS cluster
 1. node group instance type to t3.small (main.tf)
 Reason: Due to free tier limit, I can't use instance type t2.small. Then, I initially used t3.micro instance type for the node group. 
 However, this instance type does not provide sufficient resources to run all the necessary components of the EKS cluster, including the AWS EBS CSI driver and service mesh components. 
@@ -296,6 +308,49 @@ variable k8s_version {
 kubectl scale deployment adservice --replicas=0
 kubectl scale deployment recommendationservice --replicas=0
 kubectl scale deployment emailservice --replicas=0
+```
+
+### gke cluster in kubernetes-manifests
+1. I need to add resource limits because GKE Autopilot has a strict rule: if a workload uses Pod Anti-Affinity, each Pod must request at least 500m CPU.
+So, I disabled the Anti-Affinity rules and set the request to 100m for cpu and 128Mi for memory. I use the following command:
+
+```yaml
+server:
+  # Disabling anti-affinity allows smaller CPU sizes on Autopilot
+  affinity: |
+    podAntiAffinity: null
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "200Mi"
+    limits:
+      cpu: "100m"
+      memory: "200Mi"
+```
+2. I meet the problem about CustomResourceDefinition (CRD). The Gateway API CRDs (like gatewayclasses) are often installed by other processes (like a cloud provider’s managed controller). Since they lack the specific Helm metadata, Helm stops the installation to prevent accidentally breaking a shared resource.
+So, I need to manually add the labels and annotations Helm is looking for so it feels comfortable managing the resource. By running three commands terminal:
+```sh
+kubectl label crd gatewayclasses.gateway.networking.k8s.io app.kubernetes.io/managed-by=Helm --overwrite
+kubectl annotate crd gatewayclasses.gateway.networking.k8s.io meta.helm.sh/release-name=gke --overwrite
+kubectl annotate crd gatewayclasses.gateway.networking.k8s.io meta.helm.sh/release-namespace=default --overwrite
+
+# If there are multiple CRDs related to gateway.networking.k8s.io, you can use a loop to patch all of them at once:
+for crd in $(kubectl get crd | grep "gateway.networking.k8s.io" | awk '{print $1}'); do
+
+  echo "Patching $crd..."    
+
+  kubectl patch crd $crd -p '{"metadata":{"labels":{"app.kubernetes.io/managed-by":"Helm"},"annotations":{"meta.helm.sh/release-name":"gke","meta.helm.sh/release-namespace":"default"}}}'
+
+done
+```
+
+3.  I met the problem:GKE has a built-in security policy (ValidatingAdmissionPolicy) that prevents the installation of "Experimental" Gateway API resources. Consul is trying to install the GRPCRoute resource, which Google considers experimental or non-standard in my current cluster configuration.
+So, I need to tell the Consul Helm chart not to manage the Gateway API CRDs in the consul-values.yaml file by adding the following lines:
+```yaml
+connectInject:
+  enabled: true
+  apiGateway:
+    manageExternalCRDs: false
 ```
 ### Demo project accompanying a [Consul crash course video](https://www.youtube.com/watch?v=s3I1kKKfjtQ) on YouTube
 
@@ -351,6 +406,10 @@ clean terraform state
 rm -rf .terraform
 rm -rf terraform.tfstate
 rm -rf terraform.tfstate.backup
+```
+uninstall consul in cluster
+```sh
+helm uninstall cluster-name --no-hooks
 ```
 
 credit:

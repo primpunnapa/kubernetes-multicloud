@@ -167,7 +167,7 @@ spec:
       labels:
         app: currencyservice
       # annotations:
-        # consul.hashicorp.com/connect-inject: 'true'
+        consul.hashicorp.com/connect-inject: 'true'
     spec:
       containers:
       - name: server
@@ -204,8 +204,8 @@ spec:
     metadata:
       labels:
         app: shippingservice
-      # annotations:
-        # consul.hashicorp.com/connect-inject: 'true'
+      annotations:
+        consul.hashicorp.com/connect-inject: 'true'
     spec:
       containers:
       - name: server
@@ -242,8 +242,8 @@ spec:
     metadata:
       labels:
         app: adservice
-      # annotations:
-        # consul.hashicorp.com/connect-inject: 'true'
+      annotations:
+        consul.hashicorp.com/connect-inject: 'true'
     spec:
       containers:
       - name: server
@@ -280,8 +280,8 @@ spec:
     metadata:
       labels:
         app: cartservice
-      # annotations:
-        # consul.hashicorp.com/connect-inject: 'true'
+      annotations:
+        consul.hashicorp.com/connect-inject: 'true'
     spec:
       containers:
       - name: server
@@ -319,7 +319,7 @@ spec:
       labels:
         app: checkoutservice
       annotations:
-        # consul.hashicorp.com/connect-inject: 'true'
+        consul.hashicorp.com/connect-inject: 'true'
         consul.hashicorp.com/connect-service-upstreams: 'productcatalogservice:3550,shippingservice:50052,paymentservice:50051,emailservice:5000,currencyservice:7000,cartservice:7070'
     spec:
       containers:
@@ -370,7 +370,7 @@ spec:
       labels:
         app: frontend
       annotations:
-        # consul.hashicorp.com/connect-inject: 'true'
+        consul.hashicorp.com/connect-inject: 'true'
         consul.hashicorp.com/transparent-proxy: 'false'
         consul.hashicorp.com/connect-service-upstreams: 'productcatalogservice:3550,shippingservice:50052,currencyservice:7000,cartservice:7070,recommendationservice:8080,checkoutservice:5050,adservice:9555'
     spec:
@@ -393,7 +393,7 @@ spec:
           - name: SHIPPING_SERVICE_ADDR
             value: "localhost:50052"
           - name: CHECKOUT_SERVICE_ADDR
-            value: "locahost:5050"
+            value: "localhost:5050"
           - name: AD_SERVICE_ADDR
             value: "localhost:9555"
 ---
