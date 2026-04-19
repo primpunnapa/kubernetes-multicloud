@@ -428,4 +428,4 @@ gcloud container clusters delete online-boutique \
 - [Consul crash course video](https://www.youtube.com/watch?v=s3I1kKKfjtQ)
 - [Github repo for gke cluster](https://github.com/GoogleCloudPlatform/microservices-demo.git)
 - [Gitlab repo for eks cluster](https://gitlab.com/twn-youtube/consul-crash-course)
-- [Helm Chart Reference]: https://developer.hashicorp.com/consul/docs/reference/k8s/helm
+- [Helm Chart Reference](https://developer.hashicorp.com/consul/docs/reference/k8s/helm)
