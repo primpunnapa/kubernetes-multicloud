@@ -1,6 +1,15 @@
 
 # Online Boutique with Multi-Cloud Kubernetes Clusters
 
+## Table of Contents
+- [File structure](#file-structure)
+- [Set up EKS cluster with terraform](#set-up-eks-cluster-with-terraform)
+- [Set up LKE cluster](#set-up-lke-cluster)
+- [Set up GKE cluster](#set-up-gke-cluster)
+- [What I change from the original code](#what-i-change-from-the-original-code)
+- [Credit](#credit)
+
+
 ## File structure
 - kubernetes : contains yaml files for deploying consul and microservice in both eks and lke cluster
 - terraform : contains terraform code for provisioning eks cluster in AWS
@@ -12,24 +21,24 @@
 prerequisite : create account AWS [https://signin.aws.amazon.com/signup?request_type=register]
 
 ### How to get access key and secret key in AWS
-1. go to AWS console
+1. Go to AWS console
 IAM --> USER --> create user
 
-2. - step 1 enter username
-   - step 2 Permission option: choose attach policies directly --> select Administrator access
-   - step 3 create user
+2. - Step 1 Enter username
+   - Step 2 Permission option: choose attach policies directly --> select Administrator access
+   - Step 3 Create user
    ![create-user](screenshots/create-user.png)
 
 3. Once create user successfully, go to that user
    3.1 choose security credentials tab
    3.2 create access key : 
-      - step 1 choose command line interface use case
-      - step 2 option (do nothing)
-      - step 3 retrieve access key and secret key and save it in a safe place because you won't be able to see the secret key again after this step
+      - Step 1 Choose command line interface use case
+      - Step 2 Option (do nothing)
+      - Step 3 Retrieve access key and secret key and save it in a safe place because you won't be able to see the secret key again after this step
 
    ![create-key](screenshots/create-key.png)
 
-4. copy the access key and secret key and put inside terraform.tfvars
+4. Copy the access key and secret key and put inside terraform.tfvars
 ```bash
 cd terraform
 cat <<EOF > terraform.tfvars
@@ -38,7 +47,7 @@ aws_secret_access_key="your-secret-key"
 EOF
 ```
 
-5. run terraform commands
+5. Run terraform commands
 ```sh
 terraform init
 terraform plan
@@ -92,9 +101,9 @@ EXTERNAL-IP:80
 
 14. Configure access rules in Consul UI about paymentservice
 Go to intentions tab in Consul UI, create 3 intentions with 
-   - 1 source = checkoutservice, destination = paymentservice, action = allow
-   - 2 source = *, destination = paymentservice, action = deny
-   - 3 source = paymentservice, destination = *, action = deny
+   - source = checkoutservice, destination = paymentservice, action = allow
+   - source = *, destination = paymentservice, action = deny
+   - source = paymentservice, destination = *, action = deny
 
 ![eks-intention](screenshots/eks-intention.png)
 
@@ -169,9 +178,9 @@ kubectl get mesh # check if mesh gateway is created
 ```
 
 3. Go to eks consul UI and choose peer tab, 
-   1. add peer connection with lke cluster : generate token tab (name of peer = lke) and generate token
-   2. copy token and close
-   3. go to lke consul UI, choose peer tab, add peer connection with eks cluster : establish connection tab, paste the token and establish connection
+   1. Add peer connection with lke cluster : generate token tab (name of peer = lke) and generate token
+   2. Copy token and close
+   3. Go to lke consul UI, choose peer tab, add peer connection with eks cluster : establish connection tab, paste the token and establish connection
 
 #### LKE peer connection with EKS cluster
 ![lke-peer](screenshots/lke-peer.png)
@@ -209,7 +218,7 @@ kubectl delete deployment shippingservice
    - [Google Cloud project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project).
    - Shell environment with `gcloud`, `git`, and `kubectl`.
    - When create project, make sure to enable billing and set up a billing account. You can follow [this guide](https://cloud.google.com/billing/docs/how-to/manage-billing-account) to set up a billing account and link it to your project.
-   - Ensure the Google Kubernetes Engine API is enabled.. You can do this by going to the [Google Cloud Console](https://console.cloud.google.com/apis/library/container.googleapis.com) and enabling the Kubernetes Engine API for your project.
+   - Ensure the Google Kubernetes Engine API is enabled. You can do this by going to the [Google Cloud Console](https://console.cloud.google.com/apis/library/container.googleapis.com) and enabling the Kubernetes Engine API for your project.
 
 ## Deploy Online Boutique on GKE
 1. Go to kubernetes-manifests folder
@@ -238,33 +247,33 @@ kubectl delete deployment shippingservice
    Creating the cluster may take a few minutes.
 
 4. Install Consul Service Mesh on GKE. Add the HashiCorp Helm repository and install Consul.
-```bash
-helm repo add hashicorp https://helm.releases.hashicorp.com
-helm install gke hashicorp/consul --version "1.0.0" --values consul-values.yaml # if you already have consul installed, use `helm upgrade gke hashicorp/consul --values consul-values.yaml`
-```
+   ```bash
+   helm repo add hashicorp https://helm.releases.hashicorp.com
+   helm install gke hashicorp/consul --version 1.0.0  --values consul-values.yaml # if you already have consul installed, use `helm upgrade gke hashicorp/consul --values consul-values.yaml`
+   ```
 Check the summary of the resources created by the Helm:
-```bash
-kubectl get all
-```
+   ```bash
+   kubectl get all
+   ```
 ![gke-resources](screenshots/all-gke.png)
 
 Verify the CRDs are installed:
-```bash
-kubectl get crd | grep consul
-```
+   ```bash
+   kubectl get crd | grep consul
+   ```
 ![crd-gke](screenshots/crd-gke.png)
 
 5. Deploy Online Boutique to the cluster.
 
-```sh
-kubectl apply -f kubernetes-manifests.yaml
-```
+   ```bash
+   kubectl apply -f config-consul.yaml
+   ```
 
 6. Wait for the pods to be ready.
 
-```sh
-kubectl get pod
-```
+   ```bash
+   kubectl get pod
+   ```
 
 After a few minutes, you should see the Pods in a `Running` state:
 
@@ -288,47 +297,40 @@ Visit `https://EXTERNAL_IP` in a web browser to access Consul UI.
 
 10. Connect with EKS cluster and LKE cluster by following the same steps in EKS cluster and LKE cluster section above.
 
+![gke-peer](screenshots/gke-peer.png)
+
 ## What I change from the original code
-### terraform code for EKS cluster
-1. node group instance type to t3.small (main.tf)
-Reason: Due to free tier limit, I can't use instance type t2.small. Then, I initially used t3.micro instance type for the node group. 
-However, this instance type does not provide sufficient resources to run all the necessary components of the EKS cluster, including the AWS EBS CSI driver and service mesh components. 
-As a result, the Kubernetes scheduler was unable to place critical system pods, leading to provisioning failures. Upgrading the node instances to t3.medium provided more CPU and memory resources, allowing the scheduler to successfully place all required pods and enabling successful provisioning of storage and service mesh components.
+### EKS Cluster (Terraform)
+1. Node Group Instance Type: Change from t2.small to t3.small (main.tf).  
+Reason: Due to free tier limit, I can't use instance type t2.small. My initial attempt to use t3.micro failed because it provided insufficient resources for the EKS control plane components, 
+the AWS EBS CSI driver, and the service mesh. The Kubernetes scheduler could not place critical system pods, leading to provisioning failures. 
+Finally, using t3.small provided the necessary CPU and memory overhead to successfully deploy the storage and service mesh components.
 
-2. change desire size to 2 (main.tf)
-Reason: The original code has a desired size of 3. But I got the error " Warning  FailedScheduling  4m11s  default-scheduler  0/3 nodes are available: 3 Too many pods. preemption: 0/3 nodes are available: 3 No preemption victims found for incoming pod."
+2. Desired Node Size: Reduced from 3 to 2 (main.tf).  
+Reason: With my specific instance selection, a size of 3 triggered a FailedScheduling error. The scheduler reported "Too many pods," indicating that I had exceeded the pod ENI (Elastic Network Interface) limit for the instances. 
+Reducing the count to 2 stabilized the cluster within the available IP and resource limits.
 
-3. Change kubernetes version to 1.30 (variables.tf)
-variable k8s_version {
-    default = "1.30"
-}
+3. Kubernetes Version: Updated to 1.30 (variables.tf).  
+Reason: Aligned the cluster version with current AWS stable support and compatibility requirements for the modern service mesh versions used in this project.
 
-4. I need to remove some service because of node capacity limits. I remove recommendationservice, adservice and emailservice to make rediscart service run, I use the following command:
+4. Service Scaling for Capacity: Scaled down non-essential services.  
+Reason: I need to remove some service because of node capacity limits. I manually scaled down recommendationservice, adservice and emailservice to ensure rediscart service could run, I use the following command:
 ```sh
 kubectl scale deployment adservice --replicas=0
 kubectl scale deployment recommendationservice --replicas=0
 kubectl scale deployment emailservice --replicas=0
 ```
 
-### gke cluster in kubernetes-manifests
-1. I need to add resource limits because GKE Autopilot has a strict rule: if a workload uses Pod Anti-Affinity, each Pod must request at least 500m CPU.
-So, I disabled the Anti-Affinity rules and set the request to 100m for cpu and 128Mi for memory. I use the following command:
+### GKE Autopilot Cluster (Kubernetes Manifests)
+1. Resource and Affinity Configuration:  
+Reason: GKE Autopilot enforces a strict rule: if a workload uses Pod Anti-Affinity, each Pod must request at least 500m CPU. 
+To operate within a smaller resource footprint and save costs, I disabled the Anti-Affinity rules (affinity: null) and explicitly set requests to 100m CPU and 200Mi Memory.
 
-```yaml
-server:
-  # Disabling anti-affinity allows smaller CPU sizes on Autopilot
-  affinity: |
-    podAntiAffinity: null
-  resources:
-    requests:
-      cpu: "100m"
-      memory: "200Mi"
-    limits:
-      cpu: "100m"
-      memory: "200Mi"
-```
-2. I meet the problem about CustomResourceDefinition (CRD). The Gateway API CRDs (like gatewayclasses) are often installed by other processes (like a cloud provider’s managed controller). Since they lack the specific Helm metadata, Helm stops the installation to prevent accidentally breaking a shared resource.
-So, I need to manually add the labels and annotations Helm is looking for so it feels comfortable managing the resource. By running three commands terminal:
+
+2. CRD Ownership Management (Gateway API):   
+Reason: I encountered an installation conflict where the Gateway API CRDs (e.g., gatewayclasses) already existed in the cluster but lacked Helm metadata. Helm refuses to overwrite "unmanaged" resources to prevent breaking shared components.
+
+   Solution: I used a shell loop to manually patch the CRDs with the required Helm labels and annotations, allowing the consul release to adopt and manage these existing resources.
 ```sh
 kubectl label crd gatewayclasses.gateway.networking.k8s.io app.kubernetes.io/managed-by=Helm --overwrite
 kubectl annotate crd gatewayclasses.gateway.networking.k8s.io meta.helm.sh/release-name=gke --overwrite
@@ -344,8 +346,10 @@ for crd in $(kubectl get crd | grep "gateway.networking.k8s.io" | awk '{print $1
 done
 ```
 
-3.  I met the problem:GKE has a built-in security policy (ValidatingAdmissionPolicy) that prevents the installation of "Experimental" Gateway API resources. Consul is trying to install the GRPCRoute resource, which Google considers experimental or non-standard in my current cluster configuration.
-So, I need to tell the Consul Helm chart not to manage the Gateway API CRDs in the consul-values.yaml file by adding the following lines:
+3. Experimental Resource Admission Policy:  
+Reason: GKE has a built-in ValidatingAdmissionPolicy that blocks "Experimental" resources. The Consul Helm chart attempted to install the GRPCRoute resource, which was rejected by Google’s security policy.
+
+   Solution: I modified consul-values.yaml to set manageExternalCRDs: false. This prevents the Helm chart from attempting to install restricted CRDs, relying instead on the pre-existing stable Gateway API resources provided by GKE.
 ```yaml
 connectInject:
   enabled: true
@@ -412,7 +416,7 @@ uninstall consul in cluster
 helm uninstall cluster-name --no-hooks
 ```
 
-credit:
+### Credit:
 - [Consul crash course video](https://www.youtube.com/watch?v=s3I1kKKfjtQ) on YouTube
-- [github repo for gke cluster](https://github.com/GoogleCloudPlatform/microservices-demo.git)
-- [gitlab repo for eks cluster](https://gitlab.com/twn-youtube/consul-crash-course)
+- [Github repo for gke cluster](https://github.com/GoogleCloudPlatform/microservices-demo.git)
+- [Gitlab repo for eks cluster](https://gitlab.com/twn-youtube/consul-crash-course)
