@@ -71,35 +71,30 @@ kubectl get pod
 ```
 ![eks-pod](screenshots/eks-pod.png)
 
-9. Update kubeconfig file for cluster in ~/.kube
-```sh
-aws eks update-kubeconfig --region eu-central-1 --name myapp-eks-cluster
-```
-
-10. Deploy microservice
+9. Deploy microservice
 ```sh
 kubectl apply -f config-consul.yaml
 ```
 
-11. Check service
+10. Check service
 ```sh
 kubectl get svc
 ```
 ![eks-svc](screenshots/eks-svc.png)
 
-12. Go to Consul UI by using EXTERNAL-IP of consul-ui service
+11. Go to Consul UI by using EXTERNAL-IP of consul-ui service
 ```sh
 https://EXTERNAL-IP
 ```
 ![eks-consul](screenshots/eks-consul.png)
 
-13. Access the web frontend in a browser using the frontend's external IP.
+12. Access the web frontend in a browser using the frontend's external IP.
 ```sh
 EXTERNAL-IP:80
 ```
 ![eks-web](screenshots/eks-web.png)
 
-14. Configure access rules in Consul UI about paymentservice
+13. Configure access rules in Consul UI about paymentservice
 Go to intentions tab in Consul UI, create 3 intentions with 
    - source = checkoutservice, destination = paymentservice, action = allow
    - source = *, destination = paymentservice, action = deny
@@ -110,7 +105,7 @@ Go to intentions tab in Consul UI, create 3 intentions with
 ## Set up LKE cluster
 Prerequisite: create account in Linode [https://www.linode.com/]
 
-1. create the cluster in Linode called 'lke' and download lke-consul-kubeconfig.yaml (my lke-consul-kubeconfig.yaml in kubenetes folder)
+1. Create the cluster in Linode called 'lke' and download lke-consul-kubeconfig.yaml (my lke-consul-kubeconfig.yaml in kubenetes folder)
 ```bash
 cd kubernetes
 export KUBECONFIG=~/Downloads/lke-consul-kubeconfig.yaml # or your path file
@@ -251,9 +246,9 @@ kubectl delete deployment shippingservice
 4. Install Consul Service Mesh on GKE. Add the HashiCorp Helm repository and install Consul.
    ```bash
    helm repo add hashicorp https://helm.releases.hashicorp.com
-   helm install gke hashicorp/consul --version 1.0.0  --values consul-values.yaml # if you already have consul installed, use `helm upgrade gke hashicorp/consul --values consul-values.yaml`
+   helm install gke hashicorp/consul --version 1.0.0 --values consul-values.yaml --set global.datacenter=gke # if you already have consul installed, use `helm upgrade gke hashicorp/consul --values consul-values.yaml`
    ```
-Check the summary of the resources created by the Helm:
+Check the summary of the resources:
    ```bash
    kubectl get all
    ```
@@ -357,6 +352,7 @@ connectInject:
   apiGateway:
     manageExternalCRDs: false
 ```
+
 ### Extra commands
 Terraform commands to execute the script
 
@@ -429,6 +425,7 @@ gcloud container clusters delete online-boutique \
 ```
 
 ### Credit:
-- [Consul crash course video](https://www.youtube.com/watch?v=s3I1kKKfjtQ) on YouTube
+- [Consul crash course video](https://www.youtube.com/watch?v=s3I1kKKfjtQ)
 - [Github repo for gke cluster](https://github.com/GoogleCloudPlatform/microservices-demo.git)
 - [Gitlab repo for eks cluster](https://gitlab.com/twn-youtube/consul-crash-course)
+- [Helm Chart Reference]: https://developer.hashicorp.com/consul/docs/reference/k8s/helm
