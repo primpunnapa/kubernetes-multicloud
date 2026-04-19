@@ -32,8 +32,6 @@ spec:
     metadata:
       labels:
         app: currencyservice
-      annotations:
-        consul.hashicorp.com/connect-inject: 'true'
     spec:
       serviceAccountName: currencyservice
       terminationGracePeriodSeconds: 5
@@ -111,7 +109,6 @@ spec:
         app: loadgenerator
       annotations:
         sidecar.istio.io/rewriteAppHTTPProbers: "true"
-        consul.hashicorp.com/connect-inject: 'true'
     spec:
       serviceAccountName: loadgenerator
       terminationGracePeriodSeconds: 5
@@ -196,8 +193,6 @@ spec:
     metadata:
       labels:
         app: productcatalogservice
-      annotations:
-        consul.hashicorp.com/connect-inject: 'true'
     spec:
       serviceAccountName: productcatalogservice
       terminationGracePeriodSeconds: 5
@@ -271,9 +266,6 @@ spec:
     metadata:
       labels:
         app: checkoutservice
-      annotations:
-        consul.hashicorp.com/connect-inject: 'true'
-        consul.hashicorp.com/connect-service-upstreams: 'productcatalogservice:3550,shippingservice:50052,paymentservice:50051,emailservice:5000,currencyservice:7000,cartservice:7070'
     spec:
       serviceAccountName: checkoutservice
       securityContext:
@@ -305,7 +297,7 @@ spec:
           - name: PRODUCT_CATALOG_SERVICE_ADDR
             value: "productcatalogservice:3550"
           - name: SHIPPING_SERVICE_ADDR
-            value: "shippingservice:50052"
+            value: "shippingservice:50051"
           - name: PAYMENT_SERVICE_ADDR
             value: "paymentservice:50051"
           - name: EMAIL_SERVICE_ADDR
@@ -356,8 +348,6 @@ spec:
     metadata:
       labels:
         app: shippingservice
-      annotations:
-        consul.hashicorp.com/connect-inject: 'true'
     spec:
       serviceAccountName: shippingservice
       securityContext:
@@ -431,8 +421,6 @@ spec:
     metadata:
       labels:
         app: cartservice
-      annotations:
-        consul.hashicorp.com/connect-inject: 'true'
     spec:
       serviceAccountName: cartservice
       terminationGracePeriodSeconds: 5
@@ -576,8 +564,6 @@ spec:
     metadata:
       labels:
         app: emailservice
-      annotations:
-        consul.hashicorp.com/connect-inject: 'true'
     spec:
       serviceAccountName: emailservice
       terminationGracePeriodSeconds: 5
@@ -653,8 +639,6 @@ spec:
     metadata:
       labels:
         app: paymentservice
-      annotations:
-        consul.hashicorp.com/connect-inject: 'true'
     spec:
       serviceAccountName: paymentservice
       terminationGracePeriodSeconds: 5
@@ -730,10 +714,6 @@ spec:
         app: frontend
       annotations:
         sidecar.istio.io/rewriteAppHTTPProbers: "true"
-        consul.hashicorp.com/connect-inject: 'true'
-        consul.hashicorp.com/transparent-proxy: 'false'
-        consul.hashicorp.com/connect-service-upstreams: 'productcatalogservice:3550,shippingservice:50052,currencyservice:7000,cartservice:7070,recommendationservice:8080,checkoutservice:5050,adservice:9555'
-
     spec:
       serviceAccountName: frontend
       securityContext:
@@ -773,21 +753,21 @@ spec:
           - name: PORT
             value: "8080"
           - name: PRODUCT_CATALOG_SERVICE_ADDR
-            value: "localhost:3550"
+            value: "productcatalogservice:3550"
           - name: CURRENCY_SERVICE_ADDR
-            value: "localhost:7000"
+            value: "currencyservice:7000"
           - name: CART_SERVICE_ADDR
-            value: "localhost:7070"
+            value: "cartservice:7070"
           - name: RECOMMENDATION_SERVICE_ADDR
-            value: "localhost:8080"
+            value: "recommendationservice:8080"
           - name: SHIPPING_SERVICE_ADDR
-            value: "localhost:50052"
+            value: "shippingservice:50051"
           - name: CHECKOUT_SERVICE_ADDR
-            value: "localhost:5050"
+            value: "checkoutservice:5050"
           - name: AD_SERVICE_ADDR
-            value: "localhost:9555"
+            value: "adservice:9555"
           - name: SHOPPING_ASSISTANT_SERVICE_ADDR
-            value: "localhost:80"
+            value: "shoppingassistantservice:80"
           # # ENV_PLATFORM: One of: local, gcp, aws, azure, onprem, alibaba
           # # When not set, defaults to "local" unless running in GKE, otherwies auto-sets to gcp
           # - name: ENV_PLATFORM
@@ -860,9 +840,6 @@ spec:
     metadata:
       labels:
         app: recommendationservice
-      annotations:
-        consul.hashicorp.com/connect-inject: 'true'
-        consul.hashicorp.com/connect-service-upstreams: 'productcatalogservice:3550'
     spec:
       serviceAccountName: recommendationservice
       terminationGracePeriodSeconds: 5
@@ -940,8 +917,6 @@ spec:
     metadata:
       labels:
         app: adservice
-      annotations:
-        consul.hashicorp.com/connect-inject: 'true'
     spec:
       serviceAccountName: adservice
       terminationGracePeriodSeconds: 5
