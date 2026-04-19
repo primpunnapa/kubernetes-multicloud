@@ -246,6 +246,8 @@ kubectl delete deployment shippingservice
 
    Creating the cluster may take a few minutes.
 
+   ![gke-cluster](screenshots/gke-cluster.png)
+
 4. Install Consul Service Mesh on GKE. Add the HashiCorp Helm repository and install Consul.
    ```bash
    helm repo add hashicorp https://helm.releases.hashicorp.com
@@ -355,8 +357,7 @@ connectInject:
   apiGateway:
     manageExternalCRDs: false
 ```
-### Demo project accompanying a [Consul crash course video](https://www.youtube.com/watch?v=s3I1kKKfjtQ) on YouTube
-
+### Extra commands
 Terraform commands to execute the script
 
 ```sh
